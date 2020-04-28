@@ -1,4 +1,4 @@
-# Be more verbose about failures and tests.
+# More verbose tests and failures.
 build --verbose_failures
 test --test_output=all
 
