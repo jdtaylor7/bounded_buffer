@@ -12,12 +12,21 @@ class BoundedBuffer
 public:
     explicit BoundedBuffer(std::size_t cap_) : cap(cap_) {}
 
-    BoundedBuffer(std::size_t cap_, std::chrono::milliseconds timeout_) :
-        cap(cap_), timeout(timeout_) {}
+    BoundedBuffer(std::size_t cap_, T empty_value_) :
+        cap(cap_), empty_value(empty_value_) {}
+
+    BoundedBuffer(std::size_t cap_,
+                  T empty_value_,
+                  std::chrono::milliseconds timeout_) :
+        cap(cap_),
+        empty_value(empty_value_),
+        timeout(timeout_)
+    {}
 
     bool empty() const;
     std::size_t size() const;
     std::size_t capacity() const;
+    std::size_t dropped_elements() const;
 
     T front() const;
     T back() const;
@@ -33,6 +42,9 @@ private:
 
     std::size_t cap;
     std::chrono::milliseconds timeout = std::chrono::milliseconds::zero();
+
+    std::size_t dropped{};
+    T empty_value{};
 };
 
 template <typename T>
@@ -51,6 +63,12 @@ template <typename T>
 std::size_t BoundedBuffer<T>::capacity() const
 {
     return cap;
+}
+
+template <typename T>
+std::size_t BoundedBuffer<T>::dropped_elements() const
+{
+    return dropped;
 }
 
 template <typename T>
@@ -75,6 +93,10 @@ void BoundedBuffer<T>::push(const T& e)
     {
         q.push(e);
     }
+    else
+    {
+        dropped++;
+    }
 
     q_has_element.notify_one();
 }
@@ -88,6 +110,10 @@ T BoundedBuffer<T>::pop()
     {
         rv = q.front();
         q.pop();
+    }
+    else
+    {
+        rv = empty_value;
     }
 
     q_has_space.notify_one();
