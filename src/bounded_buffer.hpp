@@ -1,11 +1,16 @@
 #ifndef BOUNDED_BUFFER_HPP
 #define BOUNDED_BUFFER_HPP
 
-#include <chrono>
 #include <condition_variable>
+#include <chrono>
 #include <mutex>
 #include <queue>
 
+/*
+ * A bounded buffer for producer/consumer applications. Has multiple
+ * pushing/popping interfaces and also tracks the number of "dropped packets"
+ * (i.e. number of elements which were unsuccesfully pushed into a full buffer).
+ */
 template <typename T>
 class BoundedBuffer
 {
@@ -26,12 +31,25 @@ public:
     T front() const;
     T back() const;
 
+    /*
+     * Attempts to execute action immediately. Push fails and returns false if
+     * the buffer is full. Pop fails and returns a nullptr if the buffer is
+     * empty, so its return value should be checked against nullptr before
+     * dereferencing.
+     */
     bool try_push(const T&);
     std::shared_ptr<T> try_pop();
 
+    /*
+     * Waits indefinitely.
+     */
     void push_wait(const T&);
     std::shared_ptr<T> pop_wait();
 
+    /*
+     * Waits for a given amount of time before failing. The timeout value is
+     * specified in the constructor, not as an argument to these functions.
+     */
     bool push_wait_for(const T&);
     std::shared_ptr<T> pop_wait_for();
 private:
@@ -41,9 +59,12 @@ private:
     std::condition_variable q_has_element;
     std::condition_variable q_has_space;
 
+    // Capacity, since std::queue doesn't contain a capacity value.
     std::size_t cap;
     std::chrono::milliseconds timeout = std::chrono::milliseconds::zero();
 
+    // Number of "dropped packets", the number of elements that have been
+    // unsuccessfully pushed into the buffer.
     std::size_t dropped{};
 };
 
@@ -64,7 +85,7 @@ std::size_t BoundedBuffer<T>::size() const
 template <typename T>
 std::size_t BoundedBuffer<T>::capacity() const
 {
-    // std::lock_guard<std::mutex> g(m);
+    std::lock_guard<std::mutex> g(m);
     return cap;
 }
 
