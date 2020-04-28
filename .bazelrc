@@ -1,0 +1,10 @@
+# Be more verbose about failures and tests.
+build --verbose_failures
+test --test_output=all
+
+# Compile with C++17.
+build:linux --copt=-std=c++17
+build:windows --copt=/std:c++17
+
+# Specify location of Microsoft Visual Studio on Windows platforms.
+build:windows --action_env BAZEL_VS="/cygdrive/c/Program Files(x86)/Microsoft Visual Studio/2019/BuildTools"
