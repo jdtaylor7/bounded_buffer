@@ -12,14 +12,9 @@ class BoundedBuffer
 public:
     explicit BoundedBuffer(std::size_t cap_) : cap(cap_) {}
 
-    BoundedBuffer(std::size_t cap_, T empty_value_) :
-        cap(cap_), empty_value(empty_value_) {}
-
     BoundedBuffer(std::size_t cap_,
-                  T empty_value_,
                   std::chrono::milliseconds timeout_) :
         cap(cap_),
-        empty_value(empty_value_),
         timeout(timeout_)
     {}
 
@@ -31,12 +26,18 @@ public:
     T front() const;
     T back() const;
 
-    void push(const T&);
-    T pop();
+    bool try_push(const T&);
+    std::shared_ptr<T> try_pop();
+
+    void push_wait(const T&);
+    std::shared_ptr<T> pop_wait();
+
+    bool push_wait_for(const T&);
+    std::shared_ptr<T> pop_wait_for();
 private:
     std::queue<T> q;
 
-    std::mutex m;
+    mutable std::mutex m;
     std::condition_variable q_has_element;
     std::condition_variable q_has_space;
 
@@ -44,76 +45,138 @@ private:
     std::chrono::milliseconds timeout = std::chrono::milliseconds::zero();
 
     std::size_t dropped{};
-    T empty_value{};
 };
 
 template <typename T>
 bool BoundedBuffer<T>::empty() const
 {
+    std::lock_guard<std::mutex> g(m);
     return q.empty();
 }
 
 template <typename T>
 std::size_t BoundedBuffer<T>::size() const
 {
+    std::lock_guard<std::mutex> g(m);
     return q.size();
 }
 
 template <typename T>
 std::size_t BoundedBuffer<T>::capacity() const
 {
+    // std::lock_guard<std::mutex> g(m);
     return cap;
 }
 
 template <typename T>
 std::size_t BoundedBuffer<T>::dropped_elements() const
 {
+    std::lock_guard<std::mutex> g(m);
     return dropped;
 }
 
 template <typename T>
 T BoundedBuffer<T>::front() const
 {
+    std::lock_guard<std::mutex> g(m);
     return q.front();
 }
 
 template <typename T>
 T BoundedBuffer<T>::back() const
 {
+    std::lock_guard<std::mutex> g(m);
     return q.back();
 }
 
 template <typename T>
-void BoundedBuffer<T>::push(const T& e)
+bool BoundedBuffer<T>::try_push(const T& e)
 {
-    std::unique_lock<std::mutex> lk(m);
-    if (q_has_space.wait_for(lk,
-                             timeout,
-                             [this]{ return q.size() != capacity(); }))
+    std::lock_guard<std::mutex> lk(m);
+    if (q.size() != cap)
     {
         q.push(e);
+        q_has_element.notify_one();
+        return true;
     }
     else
     {
         dropped++;
+        return false;
     }
+}
+
+template <typename T>
+std::shared_ptr<T> BoundedBuffer<T>::try_pop()
+{
+    std::lock_guard<std::mutex> lk(m);
+    if (q.empty())
+    {
+        return nullptr;
+    }
+    auto rv = std::make_shared<T>(q.front());
+    q.pop();
+    q_has_space.notify_one();
+    return rv;
+}
+
+template <typename T>
+void BoundedBuffer<T>::push_wait(const T& e)
+{
+    std::unique_lock<std::mutex> lk(m);
+    q_has_space.wait(lk, [this]{ return q.size() != cap; });
+    q.push(e);
 
     q_has_element.notify_one();
 }
 
 template <typename T>
-T BoundedBuffer<T>::pop()
+std::shared_ptr<T> BoundedBuffer<T>::pop_wait()
 {
-    T rv{};
+    std::unique_lock<std::mutex> lk(m);
+    q_has_element.wait(lk, [this]{ return !q.empty(); });
+    auto rv = std::make_shared<T>(q.front());
+    q.pop();
+
+    q_has_space.notify_one();
+    return rv;
+}
+
+template <typename T>
+bool BoundedBuffer<T>::push_wait_for(const T& e)
+{
+    bool success;
+    std::unique_lock<std::mutex> lk(m);
+    if (q_has_space.wait_for(lk,
+                             timeout,
+                             [this]{ return q.size() != cap; }))
+    {
+        q.push(e);
+        success = true;
+    }
+    else
+    {
+        dropped++;
+        success = false;
+    }
+
+    q_has_element.notify_one();
+    return success;
+}
+
+template <typename T>
+std::shared_ptr<T> BoundedBuffer<T>::pop_wait_for()
+{
+    std::shared_ptr<T> rv;
     std::unique_lock<std::mutex> lk(m);
     if (q_has_element.wait_for(lk, timeout, [this]{ return !q.empty(); }))
     {
-        rv = q.front();
+        rv = std::make_shared<T>(q.front());
         q.pop();
     }
     else
     {
-        rv = empty_value;
+        rv = nullptr;
     }
 
     q_has_space.notify_one();
