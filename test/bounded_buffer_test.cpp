@@ -265,3 +265,50 @@ TEST(BoundedBufferTests, ThoughputTestTimeout)
     for (std::size_t i = 0; i < consumer.size(); i++)
         EXPECT_EQ(consumer[i], i);
 }
+
+/*
+ * Test BoundedBuffer::force_push.
+ */
+TEST(BoundedBufferTests, ForcePushTest)
+{
+    std::size_t capacity = 3;
+
+    auto buf = std::make_shared<BoundedBuffer<int>>(capacity);
+
+    EXPECT_EQ(buf->capacity(), capacity);
+    EXPECT_EQ(buf->size(), 0);
+
+    EXPECT_TRUE(buf->try_push(1));
+    EXPECT_TRUE(buf->try_push(2));
+    EXPECT_TRUE(buf->try_push(3));
+
+    buf->force_push(4);
+    EXPECT_EQ(buf->capacity(), capacity);
+    EXPECT_EQ(buf->size(), 3);
+    EXPECT_EQ(buf->front(), 2);
+    EXPECT_EQ(buf->back(), 4);
+    EXPECT_EQ(buf->dropped_elements(), 0);
+
+    std::shared_ptr<int> result = buf->try_pop();
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(*result, 2);
+    EXPECT_EQ(buf->front(), 3);
+    EXPECT_EQ(buf->back(), 4);
+    EXPECT_EQ(buf->size(), 2);
+
+    result = buf->try_pop();
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(*result, 3);
+    EXPECT_EQ(buf->front(), 4);
+    EXPECT_EQ(buf->back(), 4);
+    EXPECT_EQ(buf->size(), 1);
+
+    result = buf->try_pop();
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(*result, 4);
+    EXPECT_EQ(buf->size(), 0);
+    EXPECT_EQ(buf->empty(), true);
+
+    result = buf->try_pop();
+    ASSERT_EQ(result, nullptr);
+}
