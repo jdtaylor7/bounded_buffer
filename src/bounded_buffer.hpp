@@ -6,8 +6,6 @@
 #include <mutex>
 #include <queue>
 
-#include "bounded_buffer.hpp"
-
 /*
  * A bounded buffer for producer/consumer applications. Has multiple
  * pushing/popping interfaces and also tracks the number of "dropped packets"
