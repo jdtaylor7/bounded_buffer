@@ -107,6 +107,17 @@ TEST(BoundedBufferTests, BasicFuncTest)
 
     result = buf->pop_wait_for();
     EXPECT_EQ(result, nullptr);
+
+    EXPECT_TRUE(buf->try_push(1));
+    EXPECT_TRUE(buf->try_push(2));
+    EXPECT_TRUE(buf->try_push(3));
+
+    EXPECT_FALSE(buf->empty());
+    EXPECT_EQ(buf->size(), 3);
+
+    buf->clear();
+    EXPECT_TRUE(buf->empty());
+    EXPECT_EQ(buf->size(), 0);
 }
 
 /*
