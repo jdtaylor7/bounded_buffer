@@ -14,7 +14,9 @@ can be run with [Bazel](https://bazel.build/):
 
 or CMake:
 
-`cd build && cd build`
-`cmake ..`
-`cmake --build .`
-`./tests`
+```
+cd build && cd build
+cmake ..
+cmake --build .
+./tests
+```
