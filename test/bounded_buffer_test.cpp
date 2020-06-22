@@ -1,11 +1,12 @@
 #include <chrono>
 #include <iostream>
 #include <memory>
+#include <thread>
 #include <vector>
 
 #include "gtest/gtest.h"
 
-#include "src/bounded_buffer.hpp"
+#include "bounded_buffer.hpp"
 
 /*
  * Test basic all member functions under simple conditions. Does not test with

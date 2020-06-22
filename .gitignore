@@ -2,3 +2,4 @@
 *.exe.stackdump
 /bazel-*
 .tags*
+/build
