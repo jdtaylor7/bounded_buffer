@@ -17,12 +17,6 @@ class BoundedBuffer
 public:
     explicit BoundedBuffer(std::size_t cap_) : cap(cap_) {}
 
-    BoundedBuffer(std::size_t cap_,
-                  std::chrono::milliseconds timeout_) :
-        cap(cap_),
-        timeout(timeout_)
-    {}
-
     bool empty() const;
     std::size_t size() const;
     std::size_t capacity() const;
@@ -52,8 +46,11 @@ public:
      * Waits for a given amount of time before failing. The timeout value is
      * specified in the constructor, not as an argument to these functions.
      */
-    bool push_wait_for(const T&);
-    std::unique_ptr<T> pop_wait_for();
+    bool push_wait_for(
+        const T&,
+        std::chrono::milliseconds t = std::chrono::milliseconds::zero());
+    std::unique_ptr<T> pop_wait_for(
+        std::chrono::milliseconds t = std::chrono::milliseconds::zero());
 
     /*
      * If buffer not full, pushes normally. If buffer is full, clears space by
@@ -69,7 +66,6 @@ private:
 
     // Capacity, since std::queue doesn't contain a capacity value.
     std::size_t cap;
-    std::chrono::milliseconds timeout = std::chrono::milliseconds::zero();
 
     // Number of "dropped packets", the number of elements that have been
     // unsuccessfully pushed into the buffer.
@@ -180,7 +176,9 @@ std::unique_ptr<T> BoundedBuffer<T>::pop_wait()
 }
 
 template <typename T>
-bool BoundedBuffer<T>::push_wait_for(const T& e)
+bool BoundedBuffer<T>::push_wait_for(
+    const T& e,
+    std::chrono::milliseconds timeout)
 {
     bool success;
     std::unique_lock<std::mutex> lk(m);
@@ -202,7 +200,8 @@ bool BoundedBuffer<T>::push_wait_for(const T& e)
 }
 
 template <typename T>
-std::unique_ptr<T> BoundedBuffer<T>::pop_wait_for()
+std::unique_ptr<T> BoundedBuffer<T>::pop_wait_for(
+    std::chrono::milliseconds timeout)
 {
     std::unique_ptr<T> rv;
     std::unique_lock<std::mutex> lk(m);

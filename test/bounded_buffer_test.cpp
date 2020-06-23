@@ -19,7 +19,7 @@ TEST(BoundedBufferTests, BasicFuncTest)
     std::size_t capacity = 5;
     auto timeout = 2s;
 
-    auto buf = std::make_unique<BoundedBuffer<int>>(capacity, timeout);
+    auto buf = std::make_unique<BoundedBuffer<int>>(capacity);
 
     EXPECT_EQ(buf->capacity(), capacity);
     EXPECT_EQ(buf->size(), 0);
@@ -36,7 +36,7 @@ TEST(BoundedBufferTests, BasicFuncTest)
     EXPECT_EQ(buf->back(), 2);
     EXPECT_EQ(buf->size(), 2);
 
-    EXPECT_TRUE(buf->push_wait_for(3));
+    EXPECT_TRUE(buf->push_wait_for(3, timeout));
     EXPECT_EQ(buf->front(), 1);
     EXPECT_EQ(buf->back(), 3);
     EXPECT_EQ(buf->size(), 3);
@@ -59,7 +59,7 @@ TEST(BoundedBufferTests, BasicFuncTest)
     EXPECT_EQ(buf->dropped_elements(), 1);
 
     // Space not made available within 2 seconds, push fails.
-    EXPECT_FALSE(buf->push_wait_for(7));
+    EXPECT_FALSE(buf->push_wait_for(7, timeout));
     EXPECT_EQ(buf->front(), 1);
     EXPECT_EQ(buf->back(), 5);
     EXPECT_EQ(buf->size(), 5);
@@ -82,7 +82,7 @@ TEST(BoundedBufferTests, BasicFuncTest)
     EXPECT_EQ(buf->back(), 5);
     EXPECT_EQ(buf->size(), 3);
 
-    result = std::move(buf->pop_wait_for());
+    result = std::move(buf->pop_wait_for(timeout));
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(*result, 3);
     EXPECT_EQ(buf->front(), 4);
@@ -106,7 +106,7 @@ TEST(BoundedBufferTests, BasicFuncTest)
     result = std::move(buf->try_pop());
     EXPECT_EQ(result, nullptr);
 
-    result = std::move(buf->pop_wait_for());
+    result = std::move(buf->pop_wait_for(timeout));
     EXPECT_EQ(result, nullptr);
 
     EXPECT_TRUE(buf->try_push(1));
@@ -132,7 +132,7 @@ TEST(BoundedBufferTests, UnstickPushTest)
     auto timeout = 4s;
     auto max_test_time = 2s;
 
-    auto buf = std::make_shared<BoundedBuffer<int>>(capacity, timeout);
+    auto buf = std::make_shared<BoundedBuffer<int>>(capacity);
 
     EXPECT_TRUE(buf->try_push(1));
     EXPECT_TRUE(buf->try_push(2));
@@ -150,7 +150,7 @@ TEST(BoundedBufferTests, UnstickPushTest)
     });
     t.detach();
 
-    EXPECT_TRUE(buf->push_wait_for(6));
+    EXPECT_TRUE(buf->push_wait_for(6, timeout));
 
     auto time2 = std::chrono::steady_clock::now();
     auto elapsed =
@@ -175,7 +175,7 @@ TEST(BoundedBufferTests, UnstickPopTest)
     auto timeout = 4s;
     auto max_test_time = 3s;
 
-    auto buf = std::make_shared<BoundedBuffer<int>>(capacity, timeout);
+    auto buf = std::make_shared<BoundedBuffer<int>>(capacity);
 
     auto time1 = std::chrono::steady_clock::now();
 
@@ -185,7 +185,7 @@ TEST(BoundedBufferTests, UnstickPopTest)
     });
     t.detach();
 
-    auto result = std::move(buf->pop_wait_for());
+    auto result = std::move(buf->pop_wait_for(timeout));
 
     auto time2 = std::chrono::steady_clock::now();
     auto elapsed =
@@ -240,7 +240,7 @@ TEST(BoundedBufferTests, ThoughputTest)
 /*
  * Ensure correctness under load for methods with timeout functionality.
  */
-TEST(BoundedBufferTests, ThoughputTestTimeout)
+TEST(BoundedBufferTests, ThoughputTimeoutTest)
 {
     using namespace std::chrono_literals;
 
@@ -249,7 +249,7 @@ TEST(BoundedBufferTests, ThoughputTestTimeout)
 
     std::size_t arr_cap = 1'000'000;
 
-    auto buf = std::make_shared<BoundedBuffer<int>>(buf_cap, timeout);
+    auto buf = std::make_shared<BoundedBuffer<int>>(buf_cap);
 
     std::vector<int> producer(arr_cap, 0);
     std::vector<int> consumer{};
@@ -257,15 +257,15 @@ TEST(BoundedBufferTests, ThoughputTestTimeout)
     for (std::size_t i = 0; i < producer.size(); i++)
         producer[i] = i;
 
-    std::thread t1([buf, producer]{
+    std::thread t1([buf, producer, timeout]{
         for (const auto& e : producer)
-            EXPECT_TRUE(buf->push_wait_for(e));
+            EXPECT_TRUE(buf->push_wait_for(e, timeout));
     });
 
-    std::thread t2([buf, &consumer, arr_cap]{
+    std::thread t2([buf, &consumer, arr_cap, timeout]{
         std::this_thread::sleep_for(1s);
         while (consumer.size() < arr_cap)
-            consumer.push_back(*(buf->pop_wait_for()));
+            consumer.push_back(*(buf->pop_wait_for(timeout)));
     });
 
     t1.join();
