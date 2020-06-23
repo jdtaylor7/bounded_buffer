@@ -13,10 +13,12 @@ addons:
     packages:
       - googletest
       - libgtest-dev
+      - cmake
 
 before_install:
   - echo $LANG
   - echo $LC_ALL
+  - cmake --version
   - cd /usr/src/googletest
   - sudo cmake .
   - sudo cmake --build . --target install
