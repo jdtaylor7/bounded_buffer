@@ -29,8 +29,8 @@ before_script:
   - pwd
   - sudo mkdir build
   - cd build
-  - cmake ..
-  - cmake --build .
+  - sudo cmake ..
+  - sudo cmake --build .
 
 script: ./tests
 
