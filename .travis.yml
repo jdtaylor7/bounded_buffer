@@ -1,0 +1,26 @@
+language: cpp
+sudo: required
+dist: bionic
+os: linux
+compiler: g++
+
+notifications:
+    email: false
+
+before_install:
+  - echo $LANG
+  - echo $LC_ALL
+  - sudo apt update -y
+  - sudo apt install -y googletest
+
+before_script:
+  - mkdir build
+  - cd build
+  - cmake ..
+  - cmake --build .
+
+script: ./tests
+
+env:
+  global:
+    - LC_ALL="en_US.UTF-8"

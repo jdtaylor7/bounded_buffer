@@ -1,3 +1,5 @@
+[![Build Status][travis]][travis-url]
+
 # Bounded Buffer
 
 Simple templated bounded buffer for use in producer/consumer applications.
@@ -20,3 +22,10 @@ cmake ..
 cmake --build .
 ./tests
 ```
+
+### License
+
+MIT License
+
+[travis]: https://travis-ci.com/jdtaylor7/bounded_buffer.svg?branch=master
+[travis-url]: https://travis-ci.com/jdtaylor7/bounded_buffer
