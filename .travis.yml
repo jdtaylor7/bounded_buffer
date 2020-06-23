@@ -26,6 +26,7 @@ before_install:
   - sudo cmake --build . --target install
 
 before_script:
+  - cd -
   - pwd
   - sudo mkdir build
   - cd build
