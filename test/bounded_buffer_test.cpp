@@ -19,7 +19,7 @@ TEST(BoundedBufferTests, BasicFuncTest)
     std::size_t capacity = 5;
     auto timeout = 2s;
 
-    auto buf = std::make_shared<BoundedBuffer<int>>(capacity, timeout);
+    auto buf = std::make_unique<BoundedBuffer<int>>(capacity, timeout);
 
     EXPECT_EQ(buf->capacity(), capacity);
     EXPECT_EQ(buf->size(), 0);
@@ -66,7 +66,7 @@ TEST(BoundedBufferTests, BasicFuncTest)
     EXPECT_EQ(buf->capacity(), capacity);
     EXPECT_EQ(buf->dropped_elements(), 2);
 
-    std::shared_ptr<int> result = buf->try_pop();
+    auto result = std::move(buf->try_pop());
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(*result, 1);
     EXPECT_EQ(buf->front(), 2);
@@ -75,38 +75,38 @@ TEST(BoundedBufferTests, BasicFuncTest)
     EXPECT_FALSE(buf->empty());
     EXPECT_EQ(buf->dropped_elements(), 2);
 
-    result = buf->pop_wait();
+    result = std::move(buf->pop_wait());
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(*result, 2);
     EXPECT_EQ(buf->front(), 3);
     EXPECT_EQ(buf->back(), 5);
     EXPECT_EQ(buf->size(), 3);
 
-    result = buf->pop_wait_for();
+    result = std::move(buf->pop_wait_for());
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(*result, 3);
     EXPECT_EQ(buf->front(), 4);
     EXPECT_EQ(buf->back(), 5);
     EXPECT_EQ(buf->size(), 2);
 
-    result = buf->try_pop();
+    result = std::move(buf->try_pop());
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(*result, 4);
     EXPECT_EQ(buf->front(), 5);
     EXPECT_EQ(buf->back(), 5);
     EXPECT_EQ(buf->size(), 1);
 
-    result = buf->try_pop();
+    result = std::move(buf->try_pop());
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(*result, 5);
     EXPECT_EQ(buf->size(), 0);
     EXPECT_TRUE(buf->empty());
     EXPECT_EQ(buf->dropped_elements(), 2);
 
-    result = buf->try_pop();
+    result = std::move(buf->try_pop());
     EXPECT_EQ(result, nullptr);
 
-    result = buf->pop_wait_for();
+    result = std::move(buf->pop_wait_for());
     EXPECT_EQ(result, nullptr);
 
     EXPECT_TRUE(buf->try_push(1));
@@ -144,7 +144,7 @@ TEST(BoundedBufferTests, UnstickPushTest)
 
     std::thread t([buf]{
         std::this_thread::sleep_for(1s);
-        auto result = buf->try_pop();
+        auto result = std::move(buf->try_pop());
         ASSERT_NE(result, nullptr);
         EXPECT_EQ(*result, 1);
     });
@@ -185,7 +185,7 @@ TEST(BoundedBufferTests, UnstickPopTest)
     });
     t.detach();
 
-    auto result = buf->pop_wait_for();
+    auto result = std::move(buf->pop_wait_for());
 
     auto time2 = std::chrono::steady_clock::now();
     auto elapsed =
@@ -301,26 +301,26 @@ TEST(BoundedBufferTests, ForcePushTest)
     EXPECT_EQ(buf->back(), 4);
     EXPECT_EQ(buf->dropped_elements(), 0);
 
-    std::shared_ptr<int> result = buf->try_pop();
+    auto result = std::move(buf->try_pop());
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(*result, 2);
     EXPECT_EQ(buf->front(), 3);
     EXPECT_EQ(buf->back(), 4);
     EXPECT_EQ(buf->size(), 2);
 
-    result = buf->try_pop();
+    result = std::move(buf->try_pop());
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(*result, 3);
     EXPECT_EQ(buf->front(), 4);
     EXPECT_EQ(buf->back(), 4);
     EXPECT_EQ(buf->size(), 1);
 
-    result = buf->try_pop();
+    result = std::move(buf->try_pop());
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(*result, 4);
     EXPECT_EQ(buf->size(), 0);
     EXPECT_EQ(buf->empty(), true);
 
-    result = buf->try_pop();
+    result = std::move(buf->try_pop());
     ASSERT_EQ(result, nullptr);
 }

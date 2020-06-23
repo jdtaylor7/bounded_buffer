@@ -40,20 +40,20 @@ public:
      * dereferencing.
      */
     bool try_push(const T&);
-    std::shared_ptr<T> try_pop();
+    std::unique_ptr<T> try_pop();
 
     /*
      * Waits indefinitely.
      */
     void push_wait(const T&);
-    std::shared_ptr<T> pop_wait();
+    std::unique_ptr<T> pop_wait();
 
     /*
      * Waits for a given amount of time before failing. The timeout value is
      * specified in the constructor, not as an argument to these functions.
      */
     bool push_wait_for(const T&);
-    std::shared_ptr<T> pop_wait_for();
+    std::unique_ptr<T> pop_wait_for();
 
     /*
      * If buffer not full, pushes normally. If buffer is full, clears space by
@@ -144,14 +144,14 @@ bool BoundedBuffer<T>::try_push(const T& e)
 }
 
 template <typename T>
-std::shared_ptr<T> BoundedBuffer<T>::try_pop()
+std::unique_ptr<T> BoundedBuffer<T>::try_pop()
 {
     std::lock_guard<std::mutex> lk(m);
     if (q.empty())
     {
         return nullptr;
     }
-    auto rv = std::make_shared<T>(q.front());
+    auto rv = std::make_unique<T>(q.front());
     q.pop();
     q_has_space.notify_one();
     return rv;
@@ -168,11 +168,11 @@ void BoundedBuffer<T>::push_wait(const T& e)
 }
 
 template <typename T>
-std::shared_ptr<T> BoundedBuffer<T>::pop_wait()
+std::unique_ptr<T> BoundedBuffer<T>::pop_wait()
 {
     std::unique_lock<std::mutex> lk(m);
     q_has_element.wait(lk, [this]{ return !q.empty(); });
-    auto rv = std::make_shared<T>(q.front());
+    auto rv = std::make_unique<T>(q.front());
     q.pop();
 
     q_has_space.notify_one();
@@ -202,13 +202,13 @@ bool BoundedBuffer<T>::push_wait_for(const T& e)
 }
 
 template <typename T>
-std::shared_ptr<T> BoundedBuffer<T>::pop_wait_for()
+std::unique_ptr<T> BoundedBuffer<T>::pop_wait_for()
 {
-    std::shared_ptr<T> rv;
+    std::unique_ptr<T> rv;
     std::unique_lock<std::mutex> lk(m);
     if (q_has_element.wait_for(lk, timeout, [this]{ return !q.empty(); }))
     {
-        rv = std::make_shared<T>(q.front());
+        rv = std::make_unique<T>(q.front());
         q.pop();
     }
     else
