@@ -16,9 +16,7 @@ can be run with [Bazel](https://bazel.build/):
 
 or CMake, from within the root directory:
 
-```
-./test.sh
-```
+`./test.sh`
 
 ### License
 
