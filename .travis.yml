@@ -24,12 +24,7 @@ before_install:
   - sudo cmake --build . --target install
   - cd -
 
-before_script:
-  - mkdir build && cd build
-  - cmake ..
-  - cmake --build .
-
-script: ./tests
+script: ./test.sh
 
 env:
   global:

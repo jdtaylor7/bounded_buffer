@@ -14,13 +14,10 @@ can be run with [Bazel](https://bazel.build/):
 
 `bazel test --config=linux //test:bounded_buffer`
 
-or CMake:
+or CMake, from within the root directory:
 
 ```
-cd build && cd build
-cmake ..
-cmake --build .
-./tests
+./test.sh
 ```
 
 ### License
