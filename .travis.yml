@@ -16,22 +16,18 @@ addons:
       - cmake
 
 before_install:
-  - pwd
   - echo $LANG
   - echo $LC_ALL
   - cmake --version
   - cd /usr/src/googletest
-  - pwd
   - sudo cmake .
   - sudo cmake --build . --target install
+  - cd -
 
 before_script:
-  - cd -
-  - pwd
-  - sudo mkdir build
-  - cd build
-  - sudo cmake ..
-  - sudo cmake --build .
+  - mkdir build && cd build
+  - cmake ..
+  - cmake --build .
 
 script: ./tests
 
