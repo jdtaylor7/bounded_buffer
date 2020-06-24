@@ -9,8 +9,7 @@
 #include "bounded_buffer.hpp"
 
 /*
- * Test basic all member functions under simple conditions. Does not test with
- * any multithreading.
+ * Test basic member functions under simple conditions. No multithreading.
  */
 TEST(BoundedBufferTests, BasicFuncTest)
 {
@@ -142,7 +141,7 @@ TEST(BoundedBufferTests, UnstickPushTest)
 
     auto time1 = std::chrono::steady_clock::now();
 
-    std::thread t([buf]{
+    std::thread t([&]{
         std::this_thread::sleep_for(1s);
         auto result = std::move(buf->try_pop());
         ASSERT_NE(result, nullptr);
@@ -179,7 +178,7 @@ TEST(BoundedBufferTests, UnstickPopTest)
 
     auto time1 = std::chrono::steady_clock::now();
 
-    std::thread t([buf]{
+    std::thread t([&]{
         std::this_thread::sleep_for(2s);
         EXPECT_TRUE(buf->try_push(3));
     });
@@ -205,25 +204,23 @@ TEST(BoundedBufferTests, ThoughputTest)
     using namespace std::chrono_literals;
 
     std::size_t buf_cap = 1024;
-
-    std::size_t arr_cap = 1'000'000;
-
     auto buf = std::make_shared<BoundedBuffer<int>>(buf_cap);
 
-    std::vector<int> producer(arr_cap, 0);
+    std::size_t vec_cap = 1'000'000;
+    std::vector<int> producer(vec_cap, 0);
     std::vector<int> consumer{};
 
     for (std::size_t i = 0; i < producer.size(); i++)
         producer[i] = i;
 
-    std::thread t1([buf, producer]{
+    std::thread t1([&]{
         for (const auto& e : producer)
             buf->push_wait(e);
     });
 
-    std::thread t2([buf, &consumer, arr_cap]{
+    std::thread t2([&]{
         std::this_thread::sleep_for(1s);
-        while (consumer.size() < arr_cap)
+        while (consumer.size() < vec_cap)
             consumer.push_back(*(buf->pop_wait()));
     });
 
@@ -231,7 +228,7 @@ TEST(BoundedBufferTests, ThoughputTest)
     t2.join();
 
     EXPECT_EQ(producer.size(), consumer.size());
-    EXPECT_EQ(consumer.size(), arr_cap);
+    EXPECT_EQ(consumer.size(), vec_cap);
 
     for (std::size_t i = 0; i < consumer.size(); i++)
         EXPECT_EQ(consumer[i], i);
@@ -246,25 +243,23 @@ TEST(BoundedBufferTests, ThoughputTimeoutTest)
 
     std::size_t buf_cap = 1024;
     auto timeout = 10s;
-
-    std::size_t arr_cap = 1'000'000;
-
     auto buf = std::make_shared<BoundedBuffer<int>>(buf_cap);
 
-    std::vector<int> producer(arr_cap, 0);
+    std::size_t vec_cap = 1'000'000;
+    std::vector<int> producer(vec_cap, 0);
     std::vector<int> consumer{};
 
     for (std::size_t i = 0; i < producer.size(); i++)
         producer[i] = i;
 
-    std::thread t1([buf, producer, timeout]{
+    std::thread t1([&]{
         for (const auto& e : producer)
             EXPECT_TRUE(buf->push_wait_for(e, timeout));
     });
 
-    std::thread t2([buf, &consumer, arr_cap, timeout]{
+    std::thread t2([&]{
         std::this_thread::sleep_for(1s);
-        while (consumer.size() < arr_cap)
+        while (consumer.size() < vec_cap)
             consumer.push_back(*(buf->pop_wait_for(timeout)));
     });
 
@@ -272,8 +267,6 @@ TEST(BoundedBufferTests, ThoughputTimeoutTest)
     t2.join();
 
     EXPECT_EQ(producer.size(), consumer.size());
-    EXPECT_EQ(consumer.size(), arr_cap);
-
     for (std::size_t i = 0; i < consumer.size(); i++)
         EXPECT_EQ(consumer[i], i);
 }
