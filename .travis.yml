@@ -14,6 +14,7 @@ addons:
       - googletest
       - libgtest-dev
       - cmake
+      - lcov
 
 before_install:
   - echo $LANG
@@ -25,6 +26,16 @@ before_install:
   - cd -
 
 script: ./test.sh
+
+after_script:
+  # Create lcov coverage report.
+  - lcov --directory . --capture --output-file coverage.info
+  # Remove entries about system and other files.
+  - lcov --remove coverage.info '/usr/*' --output-file coverage.info
+  # Print coverage data.
+  - lcov --list coverage.info
+  # Upload coverage info to Codecov.
+  - bash <(curl -s https://codecov.io/bash) -f bounded_buffer.hpp.gcov || echo "Codecov did not collect coverage results"
 
 env:
   global:
