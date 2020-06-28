@@ -1,6 +1,6 @@
 [![Build Status][travis-badge]][travis-url]
 [![Codecov][codecov-badge]][codecov-url]
-[![MIT License][license-badge]][LICENSE.md]
+[![MIT License][license-badge]](LICENSE.md)
 
 # Bounded Buffer
 

@@ -35,7 +35,7 @@ after_script:
   # Print coverage data.
   - lcov --list coverage.info
   # Upload coverage info to Codecov.
-  - bash <(curl -s https://codecov.io/bash) -f bounded_buffer.hpp.gcov || echo "Codecov did not collect coverage results"
+  - bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage results"
 
 env:
   global:
