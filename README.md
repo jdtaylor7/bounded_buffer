@@ -1,4 +1,6 @@
-[![Build Status][travis]][travis-url]
+[![Build Status][travis-badge]][travis-url]
+[![Codecov][codecov-badge]][codecov-url]
+[![MIT License][license-badge]][LICENSE.md]
 
 # Bounded Buffer
 
@@ -18,9 +20,8 @@ or CMake, from within the root directory:
 
 `./test.sh`
 
-### License
-
-MIT License
-
-[travis]: https://travis-ci.com/jdtaylor7/bounded_buffer.svg?branch=master
+[travis-badge]: https://travis-ci.com/jdtaylor7/bounded_buffer.svg?branch=master
 [travis-url]: https://travis-ci.com/jdtaylor7/bounded_buffer
+[codecov-badge]: https://codecov.io/gh/jdtaylor7/bounded_buffer/coverage.svg?branch=master
+[codecov-url]: https://codecov.io/gh/jdtaylor7/bounded_buffer
+[license-badge]: https://img.shields.io/badge/license-MIT-007EC7.svg
