@@ -20,6 +20,7 @@ before_install:
   - echo $LANG
   - echo $LC_ALL
   - cmake --version
+  # Install googletest. Sudo required.
   - cd /usr/src/googletest
   - sudo cmake .
   - sudo cmake --build . --target install

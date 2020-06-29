@@ -12,14 +12,10 @@ include_directories(
     "${PROJECT_SOURCE_DIR}/include"
 )
 
-message("CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
-message("CMAKE_BINARY_DIR: ${CMAKE_BINARY_DIR}")
-
 # Optionally add coverage reporting.
 add_library(coverage_config INTERFACE)
 option(CODE_COVERAGE "Enable coverage reporting" OFF)
 if(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    message("CODE_COVERAGE flags added")
     target_compile_options(coverage_config INTERFACE
         -O0
         -g
@@ -32,29 +28,12 @@ if(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     endif()
 endif()
 
-# add_subdirectory(include)
-
 option(BUILD_TESTING "Build tests" ON)
 if(BUILD_TESTING AND (PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR))
-    message("adding the test subdirectory")
     enable_testing()
 
     find_package(GTest REQUIRED)
     include(GoogleTest)
 
-    # add_subdirectory(test)
-
-    # Add test executables.
-    add_executable(tests test/bounded_buffer_test.cpp)
-
-    # Add compiler/linker options.
-    # target_compile_options(tests PRIVATE -O2)
-
-    # Link libraries.
-    target_link_libraries(tests GTest::GTest GTest::Main coverage_config)
-
-    gtest_discover_tests(tests)
+    add_subdirectory(test)
 endif()
-
-message("CMAKE_LIBRARY_OUTPUT_DIRECTORY: ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
-message("CMAKE_RUNTIME_OUTPUT_DIRECTORY: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
