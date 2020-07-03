@@ -10,6 +10,11 @@ Contains interfaces for pushing/popping immediately or after waiting (either
 for a specified timeout period or indefinitely). Tracks number of failed push
 operations as well.
 
+### Extended Discussion
+
+There is a post discussing this bounded buffer implementation [on my
+blog](https://www.taylortechblog.com/posts/cpp-bounded-buffer-1).
+
 ### Running Tests
 
 Tests are written with [GoogleTest](https://github.com/google/googletest) and
